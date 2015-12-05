@@ -25,6 +25,27 @@ struct addrinfo* res;
 struct sockaddr_in address;
 socklen_t size;
 
+char contents[10000]; 
+char **dividedContents;
+
+void readFile(char *filename){
+    FILE *fp;
+    char str[1000];
+    
+    fp = fopen(filename, "r");
+    
+    if(fp != NULL){
+        while(fgets(str, sizeof(str), fp) != NULL)
+            strcat(contents, str);
+
+        fclose(fp);
+    }
+}
+
+void divideContents(){
+    
+}
+
 void addHeader(int seq_num, int ack_num, char syn_bit[2], char ack_bit[2], int window_size){    
     char sn[100], an[100], ws[100];
 
@@ -89,14 +110,13 @@ int main(int argc, char *argv[])
     char buf[BUFLEN];
     char *message;
      
-    if (argc != 2) {
+    if (argc != 2){
         fprintf(stderr,"usage: %s <port>\n", argv[0]);
         exit(1);
     }
 
     //create a UDP socket
-    if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-    {
+    if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
         die("socket");
     }
      
@@ -109,32 +129,35 @@ int main(int argc, char *argv[])
      
     //bind socket to port
     if( bind(s , (struct sockaddr*)&si_me, sizeof(si_me) ) == -1)
-    {
         die("bind");
-    }
      
     //receive data
-    if ((numbytes = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1) die("recvfrom()");
+    if ((numbytes = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1) 
+        die("recvfrom()");
     parseHeader(buf);
 
     //packet #2
     if (strcmp(SYN_BIT, "1") == 0){
         addHeader(0,1,"1","1", 100);
         strcpy(buf, header);
-        if (sendto(s, buf, strlen(buf), 0, (struct sockaddr*) &si_other, slen) == -1) die("sendto()");
+        if (sendto(s, buf, strlen(buf), 0, (struct sockaddr*) &si_other, slen) == -1) 
+            die("sendto()");
     }
 
-    if ((numbytes = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1) die("recvfrom()");
+    if ((numbytes = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1) 
+        die("recvfrom()");
 
-    if ((numbytes = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1) die("recvfrom()");
+    if ((numbytes = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1) 
+        die("recvfrom()");
     message = parseHeader(buf);
     printf("server: received\n%s\n", message);
 
     //packet #5
     addHeader(0,1,"1","1", 100);
     strcpy(buf, header);
-    strcat(buf, "Hello!");
-    if (sendto(s, buf, strlen(buf), 0, (struct sockaddr*) &si_other, slen) == -1) die("sendto()");
+    strcat(buf, "Okay! Sending you test.txt...");
+    if (sendto(s, buf, strlen(buf), 0, (struct sockaddr*) &si_other, slen) == -1) 
+        die("sendto()");
  
     close(s);
     return 0;

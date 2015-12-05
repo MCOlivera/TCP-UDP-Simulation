@@ -85,27 +85,31 @@ void die(char *s)
 int main(int argc, char *argv[])
 {
     struct sockaddr_in si_other;
+    socklen_t len;
     int s, i, slen=sizeof(si_other);
     int port;
     char buf[BUFLEN];
     char *message;
  
-    if (argc != 2) {
-        fprintf(stderr,"usage: %s <port>\n", argv[0]);
+    if (argc != 1){
+        fprintf(stderr,"usage: %s\n", argv[0]);
         exit(1);
     }
 
-    if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-    {
+    if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
         die("socket");
     }
  
     memset((char *) &si_other, 0, sizeof(si_other));
     si_other.sin_family = AF_INET;
-    si_other.sin_port = htons(atoi(argv[1]));
+    si_other.sin_port = 0;
+
+    bind(s, (struct sockaddr*)&si_other, sizeof(si_other));
+    len = sizeof(si_other);
+    getsockname(s, (struct sockaddr*)&si_other, &len);
+    port = ntohs(si_other.sin_port);
      
-    if (inet_aton(SERVER , &si_other.sin_addr) == 0) 
-    {
+    if (inet_aton(SERVER , &si_other.sin_addr) == 0){
         fprintf(stderr, "inet_aton() failed\n");
         exit(1);
     }
@@ -113,26 +117,31 @@ int main(int argc, char *argv[])
     //packet #1
     addHeader(0,0,"1","0", 100);
     strcpy(buf, header);
-    if (sendto(s, buf, strlen(buf) , 0 , (struct sockaddr *) &si_other, slen)==-1) die("sendto()");
+    if (sendto(s, buf, strlen(buf) , 0 , (struct sockaddr *) &si_other, slen)==-1) 
+        die("sendto()");
 
-    if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1) die("recvfrom()");
+    if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1) 
+        die("recvfrom()");
     parseHeader(buf);
 
     //packet #3
     if (strcmp(ACK_BIT, "1") == 0){
         addHeader(1,1,"1","1", 100);
         strcpy(buf, header);
-        if (sendto(s, buf, strlen(buf) , 0 , (struct sockaddr *) &si_other, slen)==-1) die("sendto()");
+        if (sendto(s, buf, strlen(buf) , 0 , (struct sockaddr *) &si_other, slen)==-1) 
+            die("sendto()");
         printf("Three-way Handshake Complete!\n");
     }
 
     //packet #4
     addHeader(1,1,"1","1", 100);
     strcpy(buf, header);
-    strcat(buf, "Hi!");
-    if (sendto(s, buf, strlen(buf) , 0 , (struct sockaddr *) &si_other, slen)==-1) die("sendto()");
+    strcat(buf, "I need test.txt");
+    if (sendto(s, buf, strlen(buf) , 0 , (struct sockaddr *) &si_other, slen)==-1) 
+        die("sendto()");
 
-    if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1) die("recvfrom()");
+    if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1) 
+        die("recvfrom()");
     message = parseHeader(buf);
     printf("client: received\n%s\n", message);
  
